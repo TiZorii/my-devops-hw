@@ -30,7 +30,7 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: django-release-django-app-config
+                name: {{ .Values.configMap.name }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:

@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: 178795995292.dkr.ecr.us-west-2.amazonaws.com/django-k8s-app
-  tag: "latest"
+  tag: latest
   pullPolicy: IfNotPresent
 
 service:
@@ -14,26 +14,17 @@ autoscaling:
   enabled: false  
 
 configMap:
-  name: django-config
-  data:
-    POSTGRES_DB: "myproject"
-    POSTGRES_USER: "postgres"
-    POSTGRES_PASSWORD: "postgres"
-    DB_HOST: "django-db-service"
-    DB_PORT: "5432"
-    DEBUG: "False"
-    ALLOWED_HOSTS: "172.31.39.115,localhost"
-    
-config:
-  SECRET_KEY: "django-insecure-u(qc9*j0w=ut5db3f#izfz_8szd7rruds!p8p5hgwz0in=+s7t"
-  DEBUG: "False"
-  ALLOWED_HOSTS: "localhost,.eu-north-1.elb.amazonaws.com"
-  POSTGRES_DB: "myproject"
-  POSTGRES_USER: "myuser"
-  POSTGRES_PASSWORD: "mypassword"
-  POSTGRES_HOST: "postgres"
-  POSTGRES_PORT: "5432"
+  name: django-release-django-app-config
 
+config:
+  POSTGRES_DB: "myproject"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  POSTGRES_HOST: "django-db-service"
+  POSTGRES_PORT: "5432"
+  DEBUG: "False"
+  ALLOWED_HOSTS: "172.31.39.115,localhost"
+  SECRET_KEY: "django-insecure-u(qc9*j0w=ut5db3f#izfz_8szd7rruds!p8p5hgwz0in=+s7t"
 
 resources:
   requests:
