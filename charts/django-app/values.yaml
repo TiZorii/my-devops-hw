@@ -1,0 +1,47 @@
+replicaCount: 1
+
+image:
+  repository: 178795995292.dkr.ecr.us-west-2.amazonaws.com/django-k8s-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: false  
+
+configMap:
+  name: django-release-django-app-config
+
+config:
+  POSTGRES_DB: "myproject"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  POSTGRES_HOST: "django-db-service"
+  POSTGRES_PORT: "5432"
+  DEBUG: "False"
+  ALLOWED_HOSTS: "172.31.39.115,localhost"
+  SECRET_KEY: "django-insecure-u(qc9*j0w=ut5db3f#izfz_8szd7rruds!p8p5hgwz0in=+s7t"
+
+resources:
+  requests:
+    memory: "32Mi"
+    cpu: "25m"
+  limits:
+    memory: "64Mi"
+    cpu: "50m"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  path: /
+  pathType: Prefix
+  tls: false
