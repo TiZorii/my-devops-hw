@@ -1,0 +1,88 @@
+# modules/argo_cd/values.yaml
+
+global:
+  image:
+    tag: v2.8.7
+
+# ArgoCD Server
+server:
+  extraArgs:
+    - --insecure  # Disable TLS for simplicity
+  
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+  service:
+    type: ClusterIP
+
+# ArgoCD Controller
+controller:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "200m"
+      memory: "512Mi"
+
+# ArgoCD Repo Server
+repoServer:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "256Mi"
+
+# ArgoCD Dex (disable for simplicity)
+dex:
+  enabled: false
+
+# ArgoCD Notifications (disable for simplicity)
+notifications:
+  enabled: false
+
+# ArgoCD ApplicationSet (disable for simplicity)
+applicationSet:
+  enabled: false
+
+# Configs
+configs:
+  params:
+    server.insecure: true  # Disable TLS
+    
+  cm:
+    url: ""  # Will be set after deployment
+    
+    # Add repository configurations here later
+    repositories: |
+      - type: git
+        url: https://github.com/your-username/your-repo
+    
+    # Application configurations
+    application.instanceLabelKey: argocd.argoproj.io/instance
+
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      g, admin, role:admin
+
+# Redis for ArgoCD
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
