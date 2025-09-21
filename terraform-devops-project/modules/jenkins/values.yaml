@@ -1,0 +1,74 @@
+# modules/jenkins/values.yaml - виправлена версія
+controller:
+  image: "jenkins/jenkins:lts"  # Спрощено до одного рядка
+
+  resources:
+    requests:
+      cpu: "300m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+  # Jenkins configuration as code
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: |
+            Welcome to our Jenkins instance for DevOps CI/CD!
+
+  # Install plugins
+  installPlugins:
+    - kubernetes:4183.v1e25b_a_b_5d69b_
+    - workflow-aggregator:596.v8c21c963d92d
+    - git:5.2.2
+    - configuration-as-code:1810.v9b_c30a_249a_4c
+    - blueocean:1.27.9
+    - pipeline-stage-view:2.34
+    - docker-workflow:580.vc0c340686b_54
+    - github:1.39.0
+    - aws-credentials:191.vcb_f183ce58b_9
+    - pipeline-aws:1.43
+
+  # Security settings
+  admin:
+    password: "admin123"  # Спрощено
+
+  # Jenkins URL
+  jenkinsUrl: ""
+  jenkinsUriPrefix: "/"
+
+# Persistence - ВИМКНЕНО
+persistence:
+  enabled: false
+
+# Service settings
+service:
+  type: ClusterIP
+  port: 8080
+
+# Agent settings
+agent:
+  enabled: true
+  image:
+    repository: "jenkins/inbound-agent"
+    tag: "latest"
+  
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "200m"
+      memory: "512Mi"
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Network policy (optional)
+networkPolicy:
+  enabled: false
