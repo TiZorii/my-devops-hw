@@ -1,0 +1,205 @@
+# charts/django-app/values.yaml
+
+# Default values for django-app
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Application configuration
+app:
+  name: django-app
+  version: "1.0.0"
+
+# Image configuration
+image:
+  repository: 178795995292.dkr.ecr.us-east-1.amazonaws.com/devops-final-dev-django-app
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Deployment configuration
+replicaCount: 2
+
+deployment:
+  annotations: {}
+  labels: {}
+  
+# Container configuration
+container:
+  port: 8000
+  
+  # Resource requests and limits
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi" 
+      cpu: "500m"
+
+  # Liveness and readiness probes
+  livenessProbe:
+    httpGet:
+      path: /health/
+      port: 8000
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health/
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Startup probe
+  startupProbe:
+    httpGet:
+      path: /health/
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+# Environment variables
+env:
+  # Django settings
+  DEBUG: "False"
+  SECRET_KEY: "django-secret-key-change-me"
+  DJANGO_ALLOWED_HOST: "*"
+  
+  # Database configuration (will be overridden by secrets)
+  DATABASE_HOST: ""
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "djangodb"
+  DATABASE_USER: "dbadmin"
+  
+  # Optional superuser creation
+  DJANGO_SUPERUSER_USERNAME: "admin"
+  DJANGO_SUPERUSER_EMAIL: "admin@example.com"
+
+# Secret management
+secrets:
+  # Database password from AWS Secrets Manager
+  databasePassword:
+    secretName: "django-db-secret"
+    key: "password"
+  
+  # Django secret key
+  djangoSecretKey:
+    secretName: "django-app-secret"
+    key: "secret-key"
+
+# ConfigMap for additional configuration
+configMap:
+  name: django-app-config
+  data: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+  annotations: {}
+  labels: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+  hosts:
+    - host: django-app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Security Context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Node selection
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Persistence (if needed for media files)
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  storageClass: ""
+  
+# Database migration job
+migration:
+  enabled: true
+  image:
+    repository: 178795995292.dkr.ecr.us-east-1.amazonaws.com/devops-final-dev-django-app
+    tag: "latest"
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Monitoring
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    interval: 30s
+    path: /metrics

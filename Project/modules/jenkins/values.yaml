@@ -1,0 +1,136 @@
+controller:
+  image:
+    repository: jenkins/jenkins
+    tag: "2.426.1-lts"
+
+  # 🔑 Новий синтаксис для паролю
+  admin:
+    username: "admin"
+    password: ${ADMIN_PASSWORD} # буде підставлятись із Terraform
+
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+  javaOpts: "-Xms256m -Xmx512m"
+
+  serviceType: ClusterIP
+
+  ingress:
+    enabled: false
+
+  # ✅ JCasC через правильний шлях
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: "Welcome to Jenkins CI/CD for DevOps Final Project!"
+
+      security: |
+        jenkins:
+          securityRealm:
+            local:
+              allowsSignup: false
+              users:
+               - id: admin
+                 password: ${ADMIN_PASSWORD}
+          authorizationStrategy: loggedInUsersCanDoAnything
+
+      tools: |
+        tool:
+          git:
+            installations:
+            - home: "git"
+              name: "Default"
+          dockerTool:
+            installations:
+            - name: "docker"
+              properties:
+              - installSource:
+                  installers:
+                  - dockerInstallerFromDocker:
+                      version: "latest"
+
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - configuration-as-code
+    - docker-workflow
+    - pipeline-stage-view
+    - blueocean
+    - github
+    - docker-plugin
+    - aws-credentials
+    - pipeline-aws
+    - kubernetes-cli
+
+  persistence:
+    enabled: true
+    storageClass: "gp2"
+    accessMode: "ReadWriteOnce"
+    size: "5Gi"   # 🔽 зменшила для економії
+
+  serviceAccount:
+    create: true
+    name: "jenkins"
+
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+
+agent:
+  enabled: true
+  image:
+    repository: jenkins/inbound-agent
+    tag: "3107.v665000b_51092-15"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "300m"
+      memory: "512Mi"
+
+  podTemplate:
+    yaml: |
+      apiVersion: v1
+      kind: Pod
+      spec:
+        containers:
+        - name: jnlp
+          image: jenkins/inbound-agent:3107.v665000b_51092-15
+          workingDir: /home/jenkins/agent
+        - name: docker
+          image: docker:dind
+          securityContext:
+            privileged: true
+          volumeMounts:
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+        - name: kubectl
+          image: bitnami/kubectl:latest
+          command: ["/bin/sh", "-c", "tail -f /dev/null"]
+        volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+
+rbac:
+  create: true
+  readSecrets: true
+
+networkPolicy:
+  enabled: false
+
+controller:
+  image: "jenkins/jenkins"
+  tag: "2.462.1-lts"
+controller:
+  installPlugins: false

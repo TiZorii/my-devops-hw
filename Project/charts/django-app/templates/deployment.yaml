@@ -1,0 +1,122 @@
+# charts/django-app/templates/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "django-app.fullname" . }}
+  labels:
+    {{- include "django-app.labels" . | nindent 4 }}
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "django-app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "django-app.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "django-app.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.container.port }}
+              protocol: TCP
+          env:
+            # Django configuration
+            - name: DEBUG
+              value: "{{ .Values.env.DEBUG }}"
+            - name: DJANGO_ALLOWED_HOST
+              value: "{{ .Values.env.DJANGO_ALLOWED_HOST }}"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.djangoSecretKey.secretName }}
+                  key: {{ .Values.secrets.djangoSecretKey.key }}
+            # Database configuration
+            - name: DATABASE_HOST
+              value: "{{ .Values.env.DATABASE_HOST }}"
+            - name: DATABASE_PORT
+              value: "{{ .Values.env.DATABASE_PORT }}"
+            - name: DATABASE_NAME
+              value: "{{ .Values.env.DATABASE_NAME }}"
+            - name: DATABASE_USER
+              value: "{{ .Values.env.DATABASE_USER }}"
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.databasePassword.secretName }}
+                  key: {{ .Values.secrets.databasePassword.key }}
+            # Superuser configuration
+            {{- if .Values.env.DJANGO_SUPERUSER_USERNAME }}
+            - name: DJANGO_SUPERUSER_USERNAME
+              value: "{{ .Values.env.DJANGO_SUPERUSER_USERNAME }}"
+            - name: DJANGO_SUPERUSER_EMAIL
+              value: "{{ .Values.env.DJANGO_SUPERUSER_EMAIL }}"
+            - name: DJANGO_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.databasePassword.secretName }}
+                  key: superuser-password
+            {{- end }}
+          {{- with .Values.container.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.container.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.container.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.container.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: media-storage
+              mountPath: /app/media
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: media-storage
+          persistentVolumeClaim:
+            claimName: {{ include "django-app.fullname" . }}-media
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
